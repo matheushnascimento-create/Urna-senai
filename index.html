@@ -320,6 +320,12 @@
           <h3 style="margin-bottom: 1rem; color: #38bdf8;">⚙️ Controle da Eleição & Segurança</h3>
 
           <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #334155;">
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #16a34a;">🔓 Liberação de Eleitores</h4>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">Libera o terminal local se este computador estiver sendo compartilhado por vários eleitores.</p>
+            <button class="btn-primary" style="background: #16a34a;" onclick="resetLocalVotedStatus()">Liberar Urna para Próximo Eleitor</button>
+          </div>
+
+          <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #334155;">
             <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #38bdf8;">🆕 Criar Nova Eleição / Urna do Zero</h4>
             <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">Reinicia o processo. Você pode manter os candidatos inscritos ou apagar tudo.</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -474,6 +480,7 @@
       adminPasswordHash: localStorage.getItem('urna_admin_pwd_hash') || null,
       urnaPasswordHash: localStorage.getItem('urna_pwd_hash') || null,
       electionEnded: JSON.parse(localStorage.getItem('urna_election_ended') || 'false'),
+      hasAlreadyVotedLocal: localStorage.getItem('urna_has_voted') === 'true',
       typedNumber: '',
       votedInRound: false,
       voterStartTime: Date.now(),
@@ -680,14 +687,14 @@
     }
 
     function selectCandidateNumber(num) {
-      if (state.votedInRound || state.electionEnded) return;
+      if (state.votedInRound || state.electionEnded || state.hasAlreadyVotedLocal) return;
       playBeep();
       state.typedNumber = num;
       renderScreen();
     }
 
     function pressNum(n) {
-      if (state.votedInRound || state.electionEnded) return;
+      if (state.votedInRound || state.electionEnded || state.hasAlreadyVotedLocal) return;
       if (state.typedNumber.length < 2) {
         playBeep();
         state.typedNumber += n;
@@ -696,14 +703,14 @@
     }
 
     function pressBranco() {
-      if (state.votedInRound || state.electionEnded) return;
+      if (state.votedInRound || state.electionEnded || state.hasAlreadyVotedLocal) return;
       playBeep();
       state.typedNumber = 'BRANCO';
       renderScreen();
     }
 
     function pressCorrige() {
-      if (state.votedInRound || state.electionEnded) return;
+      if (state.votedInRound || state.electionEnded || state.hasAlreadyVotedLocal) return;
       playBeep();
       state.typedNumber = '';
       renderScreen();
@@ -711,6 +718,12 @@
 
     function pressConfirma() {
       if (state.votedInRound || state.electionEnded) return;
+
+      if (state.hasAlreadyVotedLocal) {
+        alert("Você já votou nesta eleição! Cada eleitor só pode votar uma vez.");
+        return;
+      }
+
       if (!state.typedNumber) return;
 
       playSuccessChime();
@@ -726,6 +739,9 @@
       const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
       const voterName = prompt("Nome do Eleitor para o Registro (Opcional):") || "Eleitor Anónimo";
       state.voterLogs.push({ name: voterName, duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() });
+
+      state.hasAlreadyVotedLocal = true;
+      localStorage.setItem('urna_has_voted', 'true');
 
       if (isFirebaseReady && db) {
         db.ref('votes').set(state.votes);
@@ -746,6 +762,46 @@
       }, 2500);
     }
 
+    // REGRA DE SE O TEMPO ACABAR O VOTO VIRA NULO
+    function handleTimeExpiredNulo() {
+      if (state.votedInRound || state.hasAlreadyVotedLocal || state.electionEnded) return;
+
+      playSuccessChime();
+
+      // Força o voto a ser computado como NULO
+      state.votes['NULO'] = (state.votes['NULO'] || 0) + 1;
+
+      const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
+      state.voterLogs.push({ name: "Tempo Esgotado (Nulo)", duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() });
+
+      state.hasAlreadyVotedLocal = true;
+      localStorage.setItem('urna_has_voted', 'true');
+
+      if (isFirebaseReady && db) {
+        db.ref('votes').set(state.votes);
+        db.ref('voterLogs').set(state.voterLogs);
+      } else {
+        localStorage.setItem('urna_votes', JSON.stringify(state.votes));
+        localStorage.setItem('urna_voter_logs', JSON.stringify(state.voterLogs));
+      }
+
+      state.votedInRound = true;
+      renderScreenFim();
+
+      setTimeout(() => {
+        state.votedInRound = false;
+        state.typedNumber = '';
+        renderScreen();
+      }, 2500);
+    }
+
+    function resetLocalVotedStatus() {
+      state.hasAlreadyVotedLocal = false;
+      localStorage.removeItem('urna_has_voted');
+      alert("Urna liberada para o próximo eleitor!");
+      renderScreen();
+    }
+
     function renderScreen() {
       const screenTitle = document.getElementById('screen-title');
       const screenBody = document.getElementById('screen-body');
@@ -753,6 +809,12 @@
       if (state.electionEnded) {
         screenTitle.innerText = "ELEIÇÃO ENCERRADA";
         screenBody.innerHTML = `<div style="text-align:center; padding: 2rem; font-size:1.2rem; font-weight:800; color:#dc2626;">VOTAÇÃO CONCLUÍDA</div>`;
+        return;
+      }
+
+      if (state.hasAlreadyVotedLocal) {
+        screenTitle.innerText = "VOTO JÁ REGISTRADO";
+        screenBody.innerHTML = `<div style="text-align:center; padding: 2rem; font-size:1.1rem; font-weight:800; color:#10b981;">SEU VOTO JÁ FOI COMPUTADO!<br><span style="font-size:0.8rem; color:#64748b; font-weight:normal;">Obrigado por participar.</span></div>`;
         return;
       }
 
@@ -933,6 +995,7 @@
 
       state.votes = {};
       state.voterLogs = [];
+      localStorage.removeItem('urna_has_voted');
       if (clearCandidates) state.candidates = [];
 
       if (isFirebaseReady && db) {
@@ -1016,12 +1079,18 @@
       document.getElementById('modal-profile').style.display = 'none';
     }
 
+    // MONITORAMENTO DO TEMPO DA ELEIÇÃO
     setInterval(() => {
       if (state.electionSecondsLeft > 0 && !state.electionEnded) {
         state.electionSecondsLeft--;
         const min = Math.floor(state.electionSecondsLeft / 60).toString().padStart(2, '0');
         const sec = (state.electionSecondsLeft % 60).toString().padStart(2, '0');
         document.getElementById('election-timer-display').innerText = `${min}:${sec}`;
+
+        // SE O TEMPO ACABAR
+        if (state.electionSecondsLeft === 0) {
+          handleTimeExpiredNulo();
+        }
       }
     }, 1000);
 
