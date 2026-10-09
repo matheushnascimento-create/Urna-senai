@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador Educativo de Urna Eletrônica</title>
+  <title>Simulador Educativo de Urna Eletrônica - Múltiplos Cargos</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <!-- SDKs do Firebase Compat v8.10.1 -->
@@ -62,6 +62,7 @@
     .cand-avatar { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; border: 2px solid #334155; background: #1e293b; display: grid; place-items: center; font-size: 1.2rem; }
     .cand-info { flex: 1; min-width: 0; }
     .cand-num { font-size: 0.75rem; font-weight: 900; background: #2563eb; color: #fff; padding: 0.1rem 0.4rem; border-radius: 4px; display: inline-block; }
+    .cand-role { font-size: 0.7rem; font-weight: 800; background: #0284c7; color: #fff; padding: 0.1rem 0.3rem; border-radius: 4px; margin-left: 0.2rem; }
     .cand-name { font-size: 0.95rem; font-weight: 800; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cand-vice { font-size: 0.78rem; color: #94a3b8; }
     .cand-actions { display: flex; gap: 0.4rem; margin-top: auto; }
@@ -80,13 +81,13 @@
     .screen-footer { border-top: 2px dashed #cbd5e1; padding-top: 0.4rem; font-size: 0.7rem; color: #475569; }
 
     .number-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.5rem; }
-    .num-box { width: 40px; height: 48px; border: 2px solid #0f172a; background: #fff; display: grid; place-items: center; font-size: 1.8rem; font-weight: 900; color: #0f172a; }
+    .num-box { width: 38px; height: 46px; border: 2px solid #0f172a; background: #fff; display: grid; place-items: center; font-size: 1.7rem; font-weight: 900; color: #0f172a; }
     
     .candidate-preview-screen { display: flex; gap: 0.85rem; background: #fff; border-radius: 8px; padding: 0.75rem; border-left: 5px solid #2563eb; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
     .preview-photos { display: flex; flex-direction: column; gap: 0.4rem; }
     .preview-img-box { text-align: center; }
-    .preview-img-box img, .preview-img-box .no-img { width: 54px; height: 54px; border-radius: 6px; object-fit: cover; border: 1px solid #cbd5e1; background: #f1f5f9; display: grid; place-items: center; font-size: 1.2rem; }
-    .preview-img-box span { font-size: 0.6rem; font-weight: 800; color: #64748b; display: block; }
+    .preview-img-box img, .preview-img-box .no-img { width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 1px solid #cbd5e1; background: #f1f5f9; display: grid; place-items: center; font-size: 1.1rem; }
+    .preview-img-box span { font-size: 0.58rem; font-weight: 800; color: #64748b; display: block; }
 
     .keypad-panel { background: #0f172a; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; }
     .num-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; justify-items: center; }
@@ -148,10 +149,10 @@
 
   <header>
     <div class="brand-title">
-      🗳️ Simulador de Urna Eletrônica
+      🗳️ Urna Eletrônica - Eleição Oficial
     </div>
     <div class="timer-badge">
-      ⏱️ Tempo da Eleição: <span id="election-timer-display">60:00</span>
+      ⏱️ Eleição: <span id="election-timer-display">60:00</span>
     </div>
     <div class="header-nav">
       <button class="nav-btn active" id="btn-nav-voter" onclick="switchTab('voter')">Terminal do Eleitor</button>
@@ -169,7 +170,7 @@
         <div class="guide-card">
           <div class="guide-title">
             <span>📖 Caderno Guia de Candidatos</span>
-            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Clique para selecionar</span>
+            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: normal;">Selecione para votar</span>
           </div>
           <div class="candidates-list" id="guide-candidates-list"></div>
         </div>
@@ -177,7 +178,7 @@
         <div class="urna-cabinet">
           <div class="urna-screen">
             <div class="screen-header">
-              SEU VOTO PARA: <b id="screen-title">CANDIDATO / CHAPA</b>
+              SEU VOTO PARA: <b id="screen-title" style="color:#2563eb;">VEREADOR</b>
             </div>
 
             <div class="screen-body" id="screen-body"></div>
@@ -219,10 +220,7 @@
     <!-- ABA DE APURAÇÃO PÚBLICA -->
     <section id="view-public-results" class="view-section">
       <div class="admin-card">
-        <h3 style="margin-bottom: 1rem; color: #38bdf8;">📊 Quadro Geral de Apuração em Tempo Real</h3>
-        <p style="color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.9rem;">
-          Esta tela é visível publicamente para que candidatos, chapas e alunos acompanhem a contagem de votos.
-        </p>
+        <h3 style="margin-bottom: 1rem; color: #38bdf8;">📊 Quadro Geral de Apuração Pública</h3>
         <div style="max-width: 700px; margin: 0 auto 2rem auto;">
           <canvas id="publicResultsChart" style="max-height: 300px;"></canvas>
         </div>
@@ -230,10 +228,11 @@
         <table class="table-custom">
           <thead>
             <tr>
+              <th>Cargo</th>
               <th>Candidato / Chapa</th>
               <th>Número</th>
               <th>Partido</th>
-              <th>Votos Registrados</th>
+              <th>Votos</th>
             </tr>
           </thead>
           <tbody id="public-tally-tbody"></tbody>
@@ -246,17 +245,17 @@
 
       <!-- APURAÇÃO PRIVADA DO ADMIN -->
       <div class="admin-card">
-        <h3 style="margin-bottom: 1rem; color: #38bdf8;">📈 Apuração em Tempo Real (Painel do Gestor)</h3>
+        <h3 style="margin-bottom: 1rem; color: #38bdf8;">📈 Apuração do Painel do Gestor</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
           <div>
             <canvas id="adminResultsChart" style="max-height: 250px;"></canvas>
           </div>
           <div>
-            <h4 style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.5rem;">Resumo da Votação</h4>
+            <h4 style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 0.5rem;">Resumo por Cargo</h4>
             <table class="table-custom">
               <thead>
                 <tr>
-                  <th>Chapa / Candidato</th>
+                  <th>Cargo / Candidato</th>
                   <th>Votos</th>
                 </tr>
               </thead>
@@ -269,13 +268,20 @@
       <div class="admin-grid">
         
         <div class="admin-card">
-          <h3 style="margin-bottom: 1rem; color: #38bdf8;">📝 Inscrição de Chapa / Candidato</h3>
+          <h3 style="margin-bottom: 1rem; color: #38bdf8;">📝 Inscrição de Candidato</h3>
           <form onsubmit="handleSaveCandidate(event)">
-            <input type="hidden" id="cand-edit-id">
+            <div class="form-group">
+              <label>Cargo Político*</label>
+              <select id="cand-role-input" class="form-control" required onchange="adjustNumDigitsInfo()">
+                <option value="vereador">Vereador (4 dígitos)</option>
+                <option value="prefeito" selected>Prefeito (2 dígitos)</option>
+              </select>
+            </div>
+
             <div class="form-row">
               <div class="form-group">
-                <label>Número (1 a 99)*</label>
-                <input type="number" id="cand-num" class="form-control" min="1" max="99" required placeholder="Ex: 10">
+                <label>Número do Candidato*</label>
+                <input type="number" id="cand-num" class="form-control" required placeholder="Ex: 10 ou 1001">
               </div>
               <div class="form-group">
                 <label>Partido / Sigla*</label>
@@ -285,30 +291,30 @@
 
             <div class="form-row">
               <div class="form-group">
-                <label>Nome do Candidato*</label>
+                <label>Nome do Titular*</label>
                 <input type="text" id="cand-name" class="form-control" required placeholder="Ex: Ana Souza">
               </div>
               <div class="form-group">
-                <label>Foto do Candidato (Computador)*</label>
+                <label>Foto do Titular*</label>
                 <input type="file" id="cand-photo-file" class="form-control-file" accept="image/*" onchange="handleImageUpload(event, 'cand-photo-base64')">
                 <input type="hidden" id="cand-photo-base64">
               </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row" id="vice-fields-container">
               <div class="form-group">
-                <label>Nome do Vice*</label>
-                <input type="text" id="cand-vice" class="form-control" required placeholder="Ex: Bruno Lima">
+                <label>Nome do Vice (Apenas Prefeito)</label>
+                <input type="text" id="cand-vice" class="form-control" placeholder="Ex: Bruno Lima">
               </div>
               <div class="form-group">
-                <label>Foto do Vice (Computador)*</label>
+                <label>Foto do Vice</label>
                 <input type="file" id="cand-vice-photo-file" class="form-control-file" accept="image/*" onchange="handleImageUpload(event, 'cand-vice-photo-base64')">
                 <input type="hidden" id="cand-vice-photo-base64">
               </div>
             </div>
 
             <div class="form-group">
-              <label>Slogan ou Proposta Principal*</label>
+              <label>Slogan ou Proposta*</label>
               <textarea id="cand-desc" class="form-control" rows="2" required placeholder="Resumo das propostas..."></textarea>
             </div>
 
@@ -321,13 +327,12 @@
 
           <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #334155;">
             <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #16a34a;">🔓 Liberação de Eleitores</h4>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">Libera o terminal local se este computador estiver sendo compartilhado por vários eleitores.</p>
+            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">Libera o terminal local se este computador for compartilhado por vários alunos/eleitores.</p>
             <button class="btn-primary" style="background: #16a34a;" onclick="resetLocalVotedStatus()">Liberar Urna para Próximo Eleitor</button>
           </div>
 
           <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #334155;">
-            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #38bdf8;">🆕 Criar Nova Eleição / Urna do Zero</h4>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">Reinicia o processo. Você pode manter os candidatos inscritos ou apagar tudo.</p>
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #38bdf8;">🆕 Criar Nova Eleição</h4>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <button class="btn-warning" onclick="createNewElection(false)">Resetar Apenas Votos</button>
               <button class="btn-danger" onclick="createNewElection(true)">Zerar Tudo (Nova Urna)</button>
@@ -336,7 +341,6 @@
           
           <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #334155;">
             <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #ef4444;">🏁 Encerramento Definitivo</h4>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.75rem;">Ao encerrar, a urna é travada e ninguém mais poderá votar.</p>
             <button class="btn-danger" onclick="finalizeElection()">🏁 Encerrar Votação Definitivamente</button>
           </div>
 
@@ -348,33 +352,17 @@
             </div>
           </div>
 
-          <div style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #334155;">
-            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #cbd5e1;">🔑 Alterar Senha de Acesso à URNA</h4>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem;">Esta senha é exigida na tela inicial do site (não pode ser igual à do Admin).</p>
-            <form onsubmit="handleChangeUrnaPassword(event)">
-              <div class="form-group">
-                <label>Nova Senha da Urna*</label>
-                <input type="password" id="urna-pwd-new" class="form-control" required minlength="4" placeholder="••••••••">
-              </div>
-              <button type="submit" class="btn-primary">Atualizar Senha da Urna</button>
-            </form>
-          </div>
-
           <div>
-            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #cbd5e1;">🔐 Alterar Senha de Administrador</h4>
-            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem;">Esta senha é usada para aceder a esta Área do Gestor.</p>
+            <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #cbd5e1;">🔐 Alterar Senha Admin</h4>
             <form onsubmit="handleChangeAdminPassword(event)">
               <div class="form-group">
-                <label>Senha Atual do Admin*</label>
-                <input type="password" id="pwd-current" class="form-control" required placeholder="••••••••">
+                <input type="password" id="pwd-current" class="form-control" required placeholder="Senha Atual do Admin">
               </div>
               <div class="form-group">
-                <label>Nova Senha do Admin*</label>
-                <input type="password" id="pwd-new" class="form-control" required minlength="4" placeholder="••••••••">
+                <input type="password" id="pwd-new" class="form-control" required minlength="4" placeholder="Nova Senha">
               </div>
               <div class="form-group">
-                <label>Confirmar Nova Senha*</label>
-                <input type="password" id="pwd-confirm" class="form-control" required minlength="4" placeholder="••••••••">
+                <input type="password" id="pwd-confirm" class="form-control" required minlength="4" placeholder="Confirmar Nova Senha">
               </div>
               <button type="submit" class="btn-primary">Alterar Senha Admin</button>
             </form>
@@ -386,13 +374,13 @@
       <!-- CANDIDATOS CADASTRADOS -->
       <div class="admin-card">
         <h3 style="margin-bottom: 1rem; color: #38bdf8;">📋 Candidatos Cadastrados</h3>
-        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Aqui você pode remover qualquer candidato individualmente.</p>
         <div style="max-height: 250px; overflow-y: auto;">
           <table class="table-custom">
             <thead>
               <tr>
+                <th>Cargo</th>
                 <th>Nº</th>
-                <th>Nome / Chapa</th>
+                <th>Nome</th>
                 <th>Partido</th>
                 <th>Vice</th>
                 <th>Ações</th>
@@ -405,7 +393,7 @@
 
       <!-- REGISTRO DE ELEITORES -->
       <div class="admin-card">
-        <h3 style="margin-bottom: 1rem; color: #38bdf8;">📊 Registro de Eleitores</h3>
+        <h3 style="margin-bottom: 1rem; color: #38bdf8;">📊 Registro de Eleitores em Tempo Real</h3>
         <div style="max-height: 250px; overflow-y: auto;">
           <table class="table-custom">
             <thead>
@@ -438,18 +426,14 @@
   <!-- MODAL DIGITAR NOME DO ELEITOR -->
   <div class="modal-overlay" id="modal-voter-name">
     <div class="modal-card">
-      <button class="modal-close" onclick="cancelVoterNameModal()">✕</button>
-      <h3 style="margin-bottom: 0.5rem; color: #38bdf8;">👤 Identificação do Eleitor</h3>
-      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem;">Digite o seu nome completo para confirmar e registrar o voto na urna.</p>
+      <h3 style="margin-bottom: 0.5rem; color: #38bdf8;">👤 Identificação Obrigatória do Eleitor</h3>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem;">Digite seu nome para iniciar o processo de votação.</p>
       <form onsubmit="confirmVoterNameSubmit(event)">
         <div class="form-group">
           <label>Nome Completo (Obrigatório)*</label>
           <input type="text" id="voter-full-name-input" class="form-control" placeholder="Ex: João da Silva" required>
         </div>
-        <div style="display: flex; gap: 0.5rem;">
-          <button type="button" class="btn-danger" style="flex: 1;" onclick="cancelVoterNameModal()">Cancelar</button>
-          <button type="submit" class="btn-primary" style="flex: 1; background: #16a34a;">Confirmar Voto</button>
-        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; background: #16a34a;">Iniciar Votação</button>
       </form>
     </div>
   </div>
@@ -482,16 +466,18 @@
     }
 
     const DEFAULT_CANDIDATES = [
-      { numero: '10', nome: 'Ana Souza', vice: 'Bruno Lima', partido: 'PTEC', descricao: 'Inovação e laboratórios 24h para todos.', photo: '', vicePhoto: '' },
-      { numero: '20', nome: 'Carlos Eduardo', vice: 'Daniela Rocha', partido: 'PORG', descricao: 'Sustentabilidade, organização e esportes.', photo: '', vicePhoto: '' }
+      { cargo: 'vereador', numero: '1001', nome: 'Lucas Silva', vice: '', partido: 'PTEC', descricao: 'Propostas para juventude e educação.', photo: '', vicePhoto: '' },
+      { cargo: 'prefeito', numero: '10', nome: 'Ana Souza', vice: 'Bruno Lima', partido: 'PTEC', descricao: 'Inovação e infraestrutura.', photo: '', vicePhoto: '' },
+      { cargo: 'prefeito', numero: '20', nome: 'Carlos Eduardo', vice: 'Daniela Rocha', partido: 'PORG', descricao: 'Sustentabilidade e esporte.', photo: '', vicePhoto: '' }
+    ];
+
+    const ROLES = [
+      { key: 'vereador', title: 'VEREADOR', digits: 4 },
+      { key: 'prefeito', title: 'PREFEITO', digits: 2 }
     ];
 
     let storedCandidates = localStorage.getItem('urna_candidates');
     let initialCandidatesList = storedCandidates ? JSON.parse(storedCandidates) : DEFAULT_CANDIDATES;
-
-    if (!storedCandidates) {
-      localStorage.setItem('urna_candidates', JSON.stringify(DEFAULT_CANDIDATES));
-    }
 
     let state = {
       candidates: initialCandidatesList,
@@ -501,8 +487,10 @@
       urnaPasswordHash: localStorage.getItem('urna_pwd_hash') || null,
       electionEnded: JSON.parse(localStorage.getItem('urna_election_ended') || 'false'),
       hasAlreadyVotedLocal: localStorage.getItem('urna_has_voted') === 'true',
+      currentRoleIndex: 0,
       typedNumber: '',
       votedInRound: false,
+      currentVoterName: '',
       voterStartTime: Date.now(),
       electionSecondsLeft: parseInt(localStorage.getItem('urna_timer_sec') || '3600')
     };
@@ -529,7 +517,7 @@
     }
     initDefaultPasswords();
 
-    // Sincronização Firebase Realtime Database
+    // Sincronização em tempo real Firebase Realtime Database
     if (isFirebaseReady && db) {
       db.ref().on('value', (snapshot) => {
         const data = snapshot.val();
@@ -537,7 +525,6 @@
           state.candidates = data.candidates ? (Array.isArray(data.candidates) ? data.candidates : Object.values(data.candidates)) : [];
           state.votes = data.votes || {};
 
-          // CONVERSÃO CORRETA DE LOGS DO FIREBASE
           if (data.voterLogs) {
             state.voterLogs = Array.isArray(data.voterLogs) ? data.voterLogs : Object.values(data.voterLogs);
           } else {
@@ -665,13 +652,16 @@
               ${c.vicePhoto ? `<img src="${c.vicePhoto}" class="cand-avatar">` : `<div class="cand-avatar">👤</div>`}
             </div>
             <div class="cand-info">
-              <span class="cand-num">Nº ${c.numero}</span>
+              <div>
+                <span class="cand-num">Nº ${c.numero}</span>
+                <span class="cand-role">${c.cargo.toUpperCase()}</span>
+              </div>
               <div class="cand-name">${c.nome}</div>
-              <div class="cand-vice">Vice: ${c.vice}</div>
+              ${c.vice ? `<div class="cand-vice">Vice: ${c.vice}</div>` : ''}
             </div>
           </div>
           <div class="cand-actions">
-            <button class="btn-action-sm btn-select" onclick="selectCandidateNumber('${c.numero}')">Votar Nº ${c.numero}</button>
+            <button class="btn-action-sm btn-select" onclick="selectCandidateNumber('${c.numero}', '${c.cargo}')">Votar Nº ${c.numero}</button>
             <button class="btn-action-sm btn-profile" onclick="openProfile('${c.numero}')">Perfil</button>
           </div>
         </div>
@@ -682,15 +672,16 @@
       const tbody = document.getElementById('admin-candidates-tbody');
       if (!tbody) return;
       if (state.candidates.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Nenhum candidato cadastrado.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">Nenhum candidato cadastrado.</td></tr>`;
         return;
       }
       tbody.innerHTML = state.candidates.map(c => `
         <tr>
+          <td><b style="color:#0284c7;">${c.cargo.toUpperCase()}</b></td>
           <td><b style="color:#38bdf8;">${c.numero}</b></td>
           <td><b>${c.nome}</b></td>
           <td>${c.partido}</td>
-          <td>${c.vice}</td>
+          <td>${c.vice || '-'}</td>
           <td>
             <button class="btn-danger-sm" onclick="deleteCandidate('${c.numero}')">🗑️ Remover</button>
           </td>
@@ -714,16 +705,48 @@
       renderAdminCandidatesList();
     }
 
-    function selectCandidateNumber(num) {
+    function checkAndPromptVoterName() {
+      if (!state.currentVoterName && !state.hasAlreadyVotedLocal && !state.electionEnded) {
+        document.getElementById('voter-full-name-input').value = '';
+        document.getElementById('modal-voter-name').style.display = 'grid';
+        document.getElementById('voter-full-name-input').focus();
+        return false;
+      }
+      return true;
+    }
+
+    function confirmVoterNameSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('voter-full-name-input').value.trim();
+      if (!name) return;
+
+      state.currentVoterName = name;
+      state.voterStartTime = Date.now();
+      document.getElementById('modal-voter-name').style.display = 'none';
+      renderScreen();
+    }
+
+    function selectCandidateNumber(num, cargo) {
+      if (!checkAndPromptVoterName()) return;
       if (state.votedInRound || state.electionEnded || state.hasAlreadyVotedLocal) return;
+
+      const currentRole = ROLES[state.currentRoleIndex];
+      if (cargo !== currentRole.key) {
+        alert(`Agora a votação é para o cargo de: ${currentRole.title}`);
+        return;
+      }
+
       playBeep();
       state.typedNumber = num;
       renderScreen();
     }
 
     function pressNum(n) {
+      if (!checkAndPromptVoterName()) return;
       if (state.votedInRound || state.electionEnded || state.hasAlreadyVotedLocal) return;
-      if (state.typedNumber.length < 2) {
+
+      const currentRole = ROLES[state.currentRoleIndex];
+      if (state.typedNumber.length < currentRole.digits) {
         playBeep();
         state.typedNumber += n;
         renderScreen();
@@ -731,7 +754,9 @@
     }
 
     function pressBranco() {
+      if (!checkAndPromptVoterName()) return;
       if (state.votedInRound || state.electionEnded || state.hasAlreadyVotedLocal) return;
+
       playBeep();
       state.typedNumber = 'BRANCO';
       renderScreen();
@@ -739,12 +764,12 @@
 
     function pressCorrige() {
       if (state.votedInRound || state.electionEnded || state.hasAlreadyVotedLocal) return;
+
       playBeep();
       state.typedNumber = '';
       renderScreen();
     }
 
-    // CONFIRMA ABRE O MODAL OBRIGATÓRIO
     function pressConfirma() {
       if (state.votedInRound || state.electionEnded) return;
 
@@ -753,63 +778,60 @@
         return;
       }
 
+      if (!checkAndPromptVoterName()) return;
       if (!state.typedNumber) return;
 
-      document.getElementById('voter-full-name-input').value = '';
-      document.getElementById('modal-voter-name').style.display = 'grid';
-      document.getElementById('voter-full-name-input').focus();
-    }
-
-    function cancelVoterNameModal() {
-      document.getElementById('modal-voter-name').style.display = 'none';
-    }
-
-    function confirmVoterNameSubmit(e) {
-      e.preventDefault();
-      const voterName = document.getElementById('voter-full-name-input').value.trim();
-
-      if (!voterName) {
-        alert("O nome é OBRIGATÓRIO para efetivar o voto!");
-        return;
-      }
-
-      cancelVoterNameModal();
       playSuccessChime();
 
+      const currentRole = ROLES[state.currentRoleIndex];
       let finalVote = state.typedNumber;
+
       if (finalVote !== 'BRANCO') {
-        const found = state.candidates.find(c => c.numero === finalVote);
+        const found = state.candidates.find(c => c.numero === finalVote && c.cargo === currentRole.key);
         if (!found) finalVote = 'NULO';
       }
 
-      state.votes[finalVote] = (state.votes[finalVote] || 0) + 1;
+      const voteKey = `${currentRole.key}_${finalVote}`;
+      state.votes[voteKey] = (state.votes[voteKey] || 0) + 1;
 
-      const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
-      const newLogItem = { name: voterName, duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() };
-      
-      state.voterLogs.push(newLogItem);
-
-      state.hasAlreadyVotedLocal = true;
-      localStorage.setItem('urna_has_voted', 'true');
-
-      if (isFirebaseReady && db) {
-        db.ref('votes').set(state.votes);
-        db.ref('voterLogs').set(state.voterLogs);
-      } else {
-        localStorage.setItem('urna_votes', JSON.stringify(state.votes));
-        localStorage.setItem('urna_voter_logs', JSON.stringify(state.voterLogs));
-      }
-
-      state.votedInRound = true;
-      renderScreenFim();
-      renderVoterLogs();
-
-      setTimeout(() => {
-        state.votedInRound = false;
+      // Avançar para o próximo cargo ou finalizar eleitor
+      if (state.currentRoleIndex < ROLES.length - 1) {
+        state.currentRoleIndex++;
         state.typedNumber = '';
-        state.voterStartTime = Date.now();
         renderScreen();
-      }, 2500);
+      } else {
+        // FINALIZOU TODOS OS CARGOS
+        const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
+        const newLogItem = { 
+          name: state.currentVoterName || "Eleitor Registrado", 
+          duration: `${timeSpent}s`, 
+          timestamp: new Date().toLocaleTimeString() 
+        };
+
+        state.voterLogs.push(newLogItem);
+        state.hasAlreadyVotedLocal = true;
+        localStorage.setItem('urna_has_voted', 'true');
+
+        if (isFirebaseReady && db) {
+          db.ref('votes').set(state.votes);
+          db.ref('voterLogs').push(newLogItem);
+        } else {
+          localStorage.setItem('urna_votes', JSON.stringify(state.votes));
+          localStorage.setItem('urna_voter_logs', JSON.stringify(state.voterLogs));
+        }
+
+        state.votedInRound = true;
+        renderScreenFim();
+        renderVoterLogs();
+
+        setTimeout(() => {
+          state.votedInRound = false;
+          state.typedNumber = '';
+          state.currentRoleIndex = 0;
+          state.currentVoterName = '';
+          renderScreen();
+        }, 2500);
+      }
     }
 
     function handleTimeExpiredNulo() {
@@ -817,19 +839,24 @@
 
       playSuccessChime();
 
-      state.votes['NULO'] = (state.votes['NULO'] || 0) + 1;
+      const currentRole = ROLES[state.currentRoleIndex];
+      const voteKey = `${currentRole.key}_NULO`;
+      state.votes[voteKey] = (state.votes[voteKey] || 0) + 1;
 
       const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
-      const newLogItem = { name: "Tempo Esgotado (Nulo)", duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() };
-      
-      state.voterLogs.push(newLogItem);
+      const newLogItem = { 
+        name: state.currentVoterName ? `${state.currentVoterName} (Tempo Esgotado)` : "Tempo Esgotado (Nulo)", 
+        duration: `${timeSpent}s`, 
+        timestamp: new Date().toLocaleTimeString() 
+      };
 
+      state.voterLogs.push(newLogItem);
       state.hasAlreadyVotedLocal = true;
       localStorage.setItem('urna_has_voted', 'true');
 
       if (isFirebaseReady && db) {
         db.ref('votes').set(state.votes);
-        db.ref('voterLogs').set(state.voterLogs);
+        db.ref('voterLogs').push(newLogItem);
       } else {
         localStorage.setItem('urna_votes', JSON.stringify(state.votes));
         localStorage.setItem('urna_voter_logs', JSON.stringify(state.voterLogs));
@@ -842,12 +869,16 @@
       setTimeout(() => {
         state.votedInRound = false;
         state.typedNumber = '';
+        state.currentRoleIndex = 0;
+        state.currentVoterName = '';
         renderScreen();
       }, 2500);
     }
 
     function resetLocalVotedStatus() {
       state.hasAlreadyVotedLocal = false;
+      state.currentVoterName = '';
+      state.currentRoleIndex = 0;
       localStorage.removeItem('urna_has_voted');
       alert("Urna liberada para o próximo eleitor!");
       renderScreen();
@@ -869,20 +900,24 @@
         return;
       }
 
-      screenTitle.innerText = "CANDIDATO / CHAPA";
+      const currentRole = ROLES[state.currentRoleIndex];
+      screenTitle.innerText = currentRole.title;
 
       if (state.typedNumber === 'BRANCO') {
         screenBody.innerHTML = `<div style="font-size:2rem; font-weight:900; text-align:center; margin:auto; color:#0f172a;">VOTO EM BRANCO</div>`;
         return;
       }
 
-      const num1 = state.typedNumber[0] || '';
-      const num2 = state.typedNumber[1] || '';
+      let boxesHTML = '';
+      for (let i = 0; i < currentRole.digits; i++) {
+        const val = state.typedNumber[i] || '';
+        boxesHTML += `<div class="num-box">${val}</div>`;
+      }
 
-      const matchedCand = state.candidates.find(c => c.numero === state.typedNumber);
+      const matchedCand = state.candidates.find(c => c.numero === state.typedNumber && c.cargo === currentRole.key);
 
       let candidateInfoHTML = '';
-      if (state.typedNumber.length === 2) {
+      if (state.typedNumber.length === currentRole.digits) {
         if (matchedCand) {
           candidateInfoHTML = `
             <div class="candidate-preview-screen">
@@ -891,14 +926,16 @@
                   ${matchedCand.photo ? `<img src="${matchedCand.photo}">` : `<div class="no-img">👤</div>`}
                   <span>CANDIDATO</span>
                 </div>
-                <div class="preview-img-box">
-                  ${matchedCand.vicePhoto ? `<img src="${matchedCand.vicePhoto}">` : `<div class="no-img">👤</div>`}
-                  <span>VICE</span>
-                </div>
+                ${matchedCand.vice ? `
+                  <div class="preview-img-box">
+                    ${matchedCand.vicePhoto ? `<img src="${matchedCand.vicePhoto}">` : `<div class="no-img">👤</div>`}
+                    <span>VICE</span>
+                  </div>
+                ` : ''}
               </div>
               <div style="flex:1;">
                 <div style="font-size:0.75rem; color:#64748b; font-weight:800;">Nome: <b style="color:#0f172a; font-size:0.9rem;">${matchedCand.nome}</b></div>
-                <div style="font-size:0.75rem; color:#64748b; font-weight:800; margin-top:2px;">Vice: <b style="color:#0f172a;">${matchedCand.vice}</b></div>
+                ${matchedCand.vice ? `<div style="font-size:0.75rem; color:#64748b; font-weight:800; margin-top:2px;">Vice: <b style="color:#0f172a;">${matchedCand.vice}</b></div>` : ''}
                 <div style="font-size:0.75rem; color:#64748b; font-weight:800; margin-top:2px;">Partido: <b style="color:#2563eb;">${matchedCand.partido}</b></div>
               </div>
             </div>
@@ -911,10 +948,7 @@
       screenBody.innerHTML = `
         <div>
           <div style="font-size:0.75rem; color:#64748b; font-weight:800; margin-bottom:0.25rem;">Número:</div>
-          <div class="number-row">
-            <div class="num-box">${num1}</div>
-            <div class="num-box">${num2}</div>
-          </div>
+          <div class="number-row">${boxesHTML}</div>
         </div>
         ${candidateInfoHTML}
       `;
@@ -925,7 +959,6 @@
       screenBody.innerHTML = `<div style="font-size:4rem; font-weight:900; color:#16a34a; text-align:center; margin:auto;">FIM</div>`;
     }
 
-    // RENDERIZAÇÃO DA TABELA DE ELEITORES
     function renderVoterLogs() {
       const tbody = document.getElementById('voter-log-tbody');
       if (!tbody) return;
@@ -937,17 +970,12 @@
         return;
       }
 
-      tbody.innerHTML = logs.map(l => {
-        const name = l.name || l.nome || 'Eleitor Anônimo';
-        const duration = l.duration || l.duracao || '0s';
-        const time = l.timestamp || l.hora || '';
-        return `
-          <tr>
-            <td><b style="color:#f8fafc;">${name}</b></td>
-            <td>${duration} ${time ? `(${time})` : ''}</td>
-          </tr>
-        `;
-      }).join('');
+      tbody.innerHTML = logs.map(l => `
+        <tr>
+          <td><b style="color:#f8fafc;">${l.name || l.nome || 'Eleitor Registrado'}</b></td>
+          <td>${l.duration || '0s'} (${l.timestamp || ''})</td>
+        </tr>
+      `).join('');
     }
 
     function renderPublicResults() {
@@ -956,28 +984,19 @@
       let votesData = [];
 
       let html = state.candidates.map(c => {
-        const count = state.votes[c.numero] || 0;
-        labels.push(c.nome);
+        const count = state.votes[`${c.cargo}_${c.numero}`] || 0;
+        labels.push(`${c.nome} (${c.cargo.toUpperCase()})`);
         votesData.push(count);
         return `
           <tr>
-            <td><b>${c.nome}</b> (Vice: ${c.vice})</td>
+            <td><b style="color:#0284c7;">${c.cargo.toUpperCase()}</b></td>
+            <td><b>${c.nome}</b> ${c.vice ? `(Vice: ${c.vice})` : ''}</td>
             <td><span class="cand-num">${c.numero}</span></td>
             <td>${c.partido}</td>
             <td><b>${count}</b></td>
           </tr>
         `;
       }).join('');
-
-      const brancos = state.votes['BRANCO'] || 0;
-      const nulos = state.votes['NULO'] || 0;
-      labels.push('Brancos', 'Nulos');
-      votesData.push(brancos, nulos);
-
-      html += `
-        <tr><td><b>Votos em Branco</b></td><td>-</td><td>-</td><td><b>${brancos}</b></td></tr>
-        <tr><td><b>Votos Nulos</b></td><td>-</td><td>-</td><td><b>${nulos}</b></td></tr>
-      `;
 
       tbody.innerHTML = html;
 
@@ -987,7 +1006,7 @@
         type: 'bar',
         data: {
           labels: labels,
-          datasets: [{ label: 'Votos', data: votesData, backgroundColor: '#38bdf8' }]
+          datasets: [{ label: 'Votos Registrados', data: votesData, backgroundColor: '#38bdf8' }]
         },
         options: { responsive: true, scales: { y: { beginAtZero: true } } }
       });
@@ -999,18 +1018,12 @@
       let votesData = [];
 
       let html = state.candidates.map(c => {
-        const count = state.votes[c.numero] || 0;
-        labels.push(c.nome);
+        const count = state.votes[`${c.cargo}_${c.numero}`] || 0;
+        labels.push(`${c.nome} (${c.cargo.toUpperCase()})`);
         votesData.push(count);
-        return `<tr><td>${c.nome}</td><td><b>${count}</b></td></tr>`;
+        return `<tr><td>[${c.cargo.toUpperCase()}] ${c.nome}</td><td><b>${count}</b></td></tr>`;
       }).join('');
 
-      const brancos = state.votes['BRANCO'] || 0;
-      const nulos = state.votes['NULO'] || 0;
-      labels.push('Brancos', 'Nulos');
-      votesData.push(brancos, nulos);
-
-      html += `<tr><td>Brancos</td><td><b>${brancos}</b></td></tr><tr><td>Nulos</td><td><b>${nulos}</b></td></tr>`;
       tbody.innerHTML = html;
 
       const ctx = document.getElementById('adminResultsChart').getContext('2d');
@@ -1025,8 +1038,19 @@
       });
     }
 
+    function adjustNumDigitsInfo() {
+      const role = document.getElementById('cand-role-input').value;
+      const viceContainer = document.getElementById('vice-fields-container');
+      if (role === 'prefeito') {
+        viceContainer.style.display = 'grid';
+      } else {
+        viceContainer.style.display = 'none';
+      }
+    }
+
     function handleSaveCandidate(e) {
       e.preventDefault();
+      const role = document.getElementById('cand-role-input').value;
       const num = document.getElementById('cand-num').value;
       const party = document.getElementById('cand-party').value;
       const name = document.getElementById('cand-name').value;
@@ -1035,8 +1059,8 @@
       const photo = document.getElementById('cand-photo-base64').value;
       const vicePhoto = document.getElementById('cand-vice-photo-base64').value;
 
-      const existingIndex = state.candidates.findIndex(c => c.numero === num);
-      const newCand = { numero: num, partido: party, nome: name, vice: vice, descricao: desc, photo: photo, vicePhoto: vicePhoto };
+      const existingIndex = state.candidates.findIndex(c => c.numero === num && c.cargo === role);
+      const newCand = { cargo: role, numero: num, partido: party, nome: name, vice: vice, descricao: desc, photo: photo, vicePhoto: vicePhoto };
 
       if (existingIndex >= 0) {
         state.candidates[existingIndex] = newCand;
@@ -1117,26 +1141,14 @@
       e.target.reset();
     }
 
-    async function handleChangeUrnaPassword(e) {
-      e.preventDefault();
-      const newPwd = document.getElementById('urna-pwd-new').value;
-      state.urnaPasswordHash = await hashString(newPwd);
-
-      if (isFirebaseReady && db) db.ref('settings/urnaPasswordHash').set(state.urnaPasswordHash);
-      localStorage.setItem('urna_pwd_hash', state.urnaPasswordHash);
-
-      alert("Senha da Urna alterada com sucesso!");
-      e.target.reset();
-    }
-
     function openProfile(num) {
       const cand = state.candidates.find(c => c.numero === num);
       if (!cand) return;
 
       document.getElementById('profile-modal-content').innerHTML = `
         <h3 style="color:#38bdf8; margin-bottom:0.5rem;">${cand.nome} (${cand.numero})</h3>
-        <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:1rem;">Partido: <b>${cand.partido}</b> | Vice: <b>${cand.vice}</b></p>
-        <p style="color:#f8fafc; font-size:0.95rem; line-height:1.5;">${cand.descricao || 'Sem proposta registada.'}</p>
+        <p style="color:#94a3b8; font-size:0.85rem; margin-bottom:1rem;">Cargo: <b>${cand.cargo.toUpperCase()}</b> | Partido: <b>${cand.partido}</b> ${cand.vice ? `| Vice: <b>${cand.vice}</b>` : ''}</p>
+        <p style="color:#f8fafc; font-size:0.95rem; line-height:1.5;">${cand.descricao || 'Sem proposta registrada.'}</p>
       `;
       document.getElementById('modal-profile').style.display = 'grid';
     }
