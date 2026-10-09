@@ -516,7 +516,7 @@
         if (data) {
           state.candidates = data.candidates ? (Array.isArray(data.candidates) ? data.candidates : Object.values(data.candidates)) : [];
           state.votes = data.votes || {};
-          state.voterLogs = data.voterLogs ? Object.values(data.voterLogs) : [];
+          state.voterLogs = data.voterLogs ? (Array.isArray(data.voterLogs) ? data.voterLogs : Object.values(data.voterLogs)) : [];
           state.electionEnded = data.settings?.electionEnded || false;
           state.electionSecondsLeft = data.settings?.electionSecondsLeft || 3600;
           if (data.settings?.adminPasswordHash) state.adminPasswordHash = data.settings.adminPasswordHash;
@@ -594,6 +594,7 @@
       else if (tab === 'admin') {
         renderAdminResults();
         renderAdminCandidatesList();
+        renderVoterLogs();
       }
     }
 
@@ -726,6 +727,17 @@
 
       if (!state.typedNumber) return;
 
+      // NOME OBRIGATÓRIO
+      let voterName = "";
+      while (!voterName || voterName.trim() === "") {
+        const input = prompt("Por favor, digite seu NOME COMPLETO para confirmar o voto (Obrigatório):");
+        if (input === null) {
+          alert("Votação cancelada. O nome é obrigatório para registrar o voto!");
+          return;
+        }
+        voterName = input.trim();
+      }
+
       playSuccessChime();
 
       let finalVote = state.typedNumber;
@@ -737,7 +749,8 @@
       state.votes[finalVote] = (state.votes[finalVote] || 0) + 1;
 
       const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
-      const voterName = prompt("Nome do Eleitor para o Registro (Opcional):") || "Eleitor Anónimo";
+      
+      // REGISTRA O ELEITOR COM O NOME OBRIGATÓRIO
       state.voterLogs.push({ name: voterName, duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() });
 
       state.hasAlreadyVotedLocal = true;
@@ -762,13 +775,12 @@
       }, 2500);
     }
 
-    // REGRA DE SE O TEMPO ACABAR O VOTO VIRA NULO
+    // SE O TEMPO ACABAR O VOTO VIRA NULO
     function handleTimeExpiredNulo() {
       if (state.votedInRound || state.hasAlreadyVotedLocal || state.electionEnded) return;
 
       playSuccessChime();
 
-      // Força o voto a ser computado como NULO
       state.votes['NULO'] = (state.votes['NULO'] || 0) + 1;
 
       const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
@@ -876,10 +888,15 @@
 
     function renderVoterLogs() {
       const tbody = document.getElementById('voter-log-tbody');
+      if (!tbody) return;
+      if (state.voterLogs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#94a3b8;">Nenhum eleitor registrado ainda.</td></tr>`;
+        return;
+      }
       tbody.innerHTML = state.voterLogs.map(l => `
         <tr>
-          <td>${l.name}</td>
-          <td>${l.duration} (${l.timestamp})</td>
+          <td><b>${l.name || 'Eleitor Anónimo'}</b></td>
+          <td>${l.duration || '0s'} (${l.timestamp || ''})</td>
         </tr>
       `).join('');
     }
@@ -1087,7 +1104,6 @@
         const sec = (state.electionSecondsLeft % 60).toString().padStart(2, '0');
         document.getElementById('election-timer-display').innerText = `${min}:${sec}`;
 
-        // SE O TEMPO ACABAR
         if (state.electionSecondsLeft === 0) {
           handleTimeExpiredNulo();
         }
@@ -1105,6 +1121,7 @@
     renderGuide();
     renderScreen();
     renderAdminCandidatesList();
+    renderVoterLogs();
   </script>
 </body>
 </html>
