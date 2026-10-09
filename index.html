@@ -383,7 +383,7 @@
 
       </div>
 
-      <!-- CANDIDATOS CADASTRADOS E OPÇÃO DE REMOVER -->
+      <!-- CANDIDATOS CADASTRADOS -->
       <div class="admin-card">
         <h3 style="margin-bottom: 1rem; color: #38bdf8;">📋 Candidatos Cadastrados</h3>
         <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Aqui você pode remover qualquer candidato individualmente.</p>
@@ -403,6 +403,7 @@
         </div>
       </div>
 
+      <!-- REGISTRO DE ELEITORES -->
       <div class="admin-card">
         <h3 style="margin-bottom: 1rem; color: #38bdf8;">📊 Registro de Eleitores</h3>
         <div style="max-height: 250px; overflow-y: auto;">
@@ -430,6 +431,25 @@
           <input type="password" id="admin-login-pwd" class="form-control" required placeholder="Digite a senha de acesso">
         </div>
         <button type="submit" class="btn-primary" style="width: 100%;">Entrar no Painel</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DIGITAR NOME DO ELEITOR -->
+  <div class="modal-overlay" id="modal-voter-name">
+    <div class="modal-card">
+      <button class="modal-close" onclick="cancelVoterNameModal()">✕</button>
+      <h3 style="margin-bottom: 0.5rem; color: #38bdf8;">👤 Identificação do Eleitor</h3>
+      <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem;">Digite o seu nome completo para confirmar e registrar o voto na urna.</p>
+      <form onsubmit="confirmVoterNameSubmit(event)">
+        <div class="form-group">
+          <label>Nome Completo (Obrigatório)*</label>
+          <input type="text" id="voter-full-name-input" class="form-control" placeholder="Ex: João da Silva" required>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" class="btn-danger" style="flex: 1;" onclick="cancelVoterNameModal()">Cancelar</button>
+          <button type="submit" class="btn-primary" style="flex: 1; background: #16a34a;">Confirmar Voto</button>
+        </div>
       </form>
     </div>
   </div>
@@ -509,14 +529,21 @@
     }
     initDefaultPasswords();
 
-    // Sincronização em tempo real via Firebase Realtime Database
+    // Sincronização Firebase Realtime Database
     if (isFirebaseReady && db) {
       db.ref().on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
           state.candidates = data.candidates ? (Array.isArray(data.candidates) ? data.candidates : Object.values(data.candidates)) : [];
           state.votes = data.votes || {};
-          state.voterLogs = data.voterLogs ? (Array.isArray(data.voterLogs) ? data.voterLogs : Object.values(data.voterLogs)) : [];
+
+          // CONVERSÃO CORRETA DE LOGS DO FIREBASE
+          if (data.voterLogs) {
+            state.voterLogs = Array.isArray(data.voterLogs) ? data.voterLogs : Object.values(data.voterLogs);
+          } else {
+            state.voterLogs = [];
+          }
+
           state.electionEnded = data.settings?.electionEnded || false;
           state.electionSecondsLeft = data.settings?.electionSecondsLeft || 3600;
           if (data.settings?.adminPasswordHash) state.adminPasswordHash = data.settings.adminPasswordHash;
@@ -717,6 +744,7 @@
       renderScreen();
     }
 
+    // CONFIRMA ABRE O MODAL OBRIGATÓRIO
     function pressConfirma() {
       if (state.votedInRound || state.electionEnded) return;
 
@@ -727,17 +755,25 @@
 
       if (!state.typedNumber) return;
 
-      // NOME OBRIGATÓRIO
-      let voterName = "";
-      while (!voterName || voterName.trim() === "") {
-        const input = prompt("Por favor, digite seu NOME COMPLETO para confirmar o voto (Obrigatório):");
-        if (input === null) {
-          alert("Votação cancelada. O nome é obrigatório para registrar o voto!");
-          return;
-        }
-        voterName = input.trim();
+      document.getElementById('voter-full-name-input').value = '';
+      document.getElementById('modal-voter-name').style.display = 'grid';
+      document.getElementById('voter-full-name-input').focus();
+    }
+
+    function cancelVoterNameModal() {
+      document.getElementById('modal-voter-name').style.display = 'none';
+    }
+
+    function confirmVoterNameSubmit(e) {
+      e.preventDefault();
+      const voterName = document.getElementById('voter-full-name-input').value.trim();
+
+      if (!voterName) {
+        alert("O nome é OBRIGATÓRIO para efetivar o voto!");
+        return;
       }
 
+      cancelVoterNameModal();
       playSuccessChime();
 
       let finalVote = state.typedNumber;
@@ -749,9 +785,9 @@
       state.votes[finalVote] = (state.votes[finalVote] || 0) + 1;
 
       const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
+      const newLogItem = { name: voterName, duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() };
       
-      // REGISTRA O ELEITOR COM O NOME OBRIGATÓRIO
-      state.voterLogs.push({ name: voterName, duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() });
+      state.voterLogs.push(newLogItem);
 
       state.hasAlreadyVotedLocal = true;
       localStorage.setItem('urna_has_voted', 'true');
@@ -766,6 +802,7 @@
 
       state.votedInRound = true;
       renderScreenFim();
+      renderVoterLogs();
 
       setTimeout(() => {
         state.votedInRound = false;
@@ -775,7 +812,6 @@
       }, 2500);
     }
 
-    // SE O TEMPO ACABAR O VOTO VIRA NULO
     function handleTimeExpiredNulo() {
       if (state.votedInRound || state.hasAlreadyVotedLocal || state.electionEnded) return;
 
@@ -784,7 +820,9 @@
       state.votes['NULO'] = (state.votes['NULO'] || 0) + 1;
 
       const timeSpent = Math.round((Date.now() - state.voterStartTime) / 1000);
-      state.voterLogs.push({ name: "Tempo Esgotado (Nulo)", duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() });
+      const newLogItem = { name: "Tempo Esgotado (Nulo)", duration: `${timeSpent}s`, timestamp: new Date().toLocaleTimeString() };
+      
+      state.voterLogs.push(newLogItem);
 
       state.hasAlreadyVotedLocal = true;
       localStorage.setItem('urna_has_voted', 'true');
@@ -799,6 +837,7 @@
 
       state.votedInRound = true;
       renderScreenFim();
+      renderVoterLogs();
 
       setTimeout(() => {
         state.votedInRound = false;
@@ -886,19 +925,29 @@
       screenBody.innerHTML = `<div style="font-size:4rem; font-weight:900; color:#16a34a; text-align:center; margin:auto;">FIM</div>`;
     }
 
+    // RENDERIZAÇÃO DA TABELA DE ELEITORES
     function renderVoterLogs() {
       const tbody = document.getElementById('voter-log-tbody');
       if (!tbody) return;
-      if (state.voterLogs.length === 0) {
+
+      const logs = Array.isArray(state.voterLogs) ? state.voterLogs : Object.values(state.voterLogs || {});
+
+      if (logs.length === 0) {
         tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#94a3b8;">Nenhum eleitor registrado ainda.</td></tr>`;
         return;
       }
-      tbody.innerHTML = state.voterLogs.map(l => `
-        <tr>
-          <td><b>${l.name || 'Eleitor Anónimo'}</b></td>
-          <td>${l.duration || '0s'} (${l.timestamp || ''})</td>
-        </tr>
-      `).join('');
+
+      tbody.innerHTML = logs.map(l => {
+        const name = l.name || l.nome || 'Eleitor Anônimo';
+        const duration = l.duration || l.duracao || '0s';
+        const time = l.timestamp || l.hora || '';
+        return `
+          <tr>
+            <td><b style="color:#f8fafc;">${name}</b></td>
+            <td>${duration} ${time ? `(${time})` : ''}</td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function renderPublicResults() {
@@ -1096,7 +1145,6 @@
       document.getElementById('modal-profile').style.display = 'none';
     }
 
-    // MONITORAMENTO DO TEMPO DA ELEIÇÃO
     setInterval(() => {
       if (state.electionSecondsLeft > 0 && !state.electionEnded) {
         state.electionSecondsLeft--;
