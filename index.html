@@ -115,6 +115,7 @@
     .btn-danger:hover { background: #b91c1c; }
     .btn-warning { background: #d97706; color: #fff; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.15s; }
     .btn-warning:hover { background: #b45309; }
+    .btn-danger-sm { background: #ef4444; color: #fff; border: none; padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 800; font-size: 0.75rem; cursor: pointer; }
 
     .table-custom { width: 100%; border-collapse: collapse; margin-top: 1rem; }
     .table-custom th, .table-custom td { padding: 0.75rem; text-align: left; border-bottom: 1px solid #334155; font-size: 0.88rem; }
@@ -376,6 +377,26 @@
 
       </div>
 
+      <!-- CANDIDATOS CADASTRADOS E OPÇÃO DE REMOVER -->
+      <div class="admin-card">
+        <h3 style="margin-bottom: 1rem; color: #38bdf8;">📋 Candidatos Cadastrados</h3>
+        <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 1rem;">Aqui você pode remover qualquer candidato individualmente.</p>
+        <div style="max-height: 250px; overflow-y: auto;">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Nº</th>
+                <th>Nome / Chapa</th>
+                <th>Partido</th>
+                <th>Vice</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="admin-candidates-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="admin-card">
         <h3 style="margin-bottom: 1rem; color: #38bdf8;">📊 Registro de Eleitores</h3>
         <div style="max-height: 250px; overflow-y: auto;">
@@ -486,9 +507,7 @@
       db.ref().on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          if (data.candidates && data.candidates.length > 0) {
-            state.candidates = data.candidates;
-          }
+          state.candidates = data.candidates ? (Array.isArray(data.candidates) ? data.candidates : Object.values(data.candidates)) : [];
           state.votes = data.votes || {};
           state.voterLogs = data.voterLogs ? Object.values(data.voterLogs) : [];
           state.electionEnded = data.settings?.electionEnded || false;
@@ -505,6 +524,7 @@
         renderGuide();
         renderScreen();
         renderVoterLogs();
+        renderAdminCandidatesList();
       });
     }
 
@@ -564,7 +584,10 @@
       document.getElementById('btn-nav-admin').classList.toggle('active', tab === 'admin');
 
       if (tab === 'public-results') renderPublicResults();
-      else if (tab === 'admin') renderAdminResults();
+      else if (tab === 'admin') {
+        renderAdminResults();
+        renderAdminCandidatesList();
+      }
     }
 
     function openAdminAuth() {
@@ -618,6 +641,42 @@
           </div>
         </div>
       `).join('');
+    }
+
+    function renderAdminCandidatesList() {
+      const tbody = document.getElementById('admin-candidates-tbody');
+      if (!tbody) return;
+      if (state.candidates.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Nenhum candidato cadastrado.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = state.candidates.map(c => `
+        <tr>
+          <td><b style="color:#38bdf8;">${c.numero}</b></td>
+          <td><b>${c.nome}</b></td>
+          <td>${c.partido}</td>
+          <td>${c.vice}</td>
+          <td>
+            <button class="btn-danger-sm" onclick="deleteCandidate('${c.numero}')">🗑️ Remover</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function deleteCandidate(num) {
+      if (!confirm(`Tem certeza que deseja remover o candidato Nº ${num}?`)) return;
+
+      state.candidates = state.candidates.filter(c => c.numero !== num);
+
+      if (isFirebaseReady && db) {
+        db.ref('candidates').set(state.candidates);
+      } else {
+        localStorage.setItem('urna_candidates', JSON.stringify(state.candidates));
+      }
+
+      alert(`Candidato Nº ${num} removido com sucesso!`);
+      renderGuide();
+      renderAdminCandidatesList();
     }
 
     function selectCandidateNumber(num) {
@@ -866,6 +925,7 @@
       alert("Candidato guardado com sucesso!");
       e.target.reset();
       renderGuide();
+      renderAdminCandidatesList();
     }
 
     function createNewElection(clearCandidates) {
@@ -975,6 +1035,7 @@
 
     renderGuide();
     renderScreen();
+    renderAdminCandidatesList();
   </script>
 </body>
 </html>
